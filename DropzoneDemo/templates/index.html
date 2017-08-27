@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=="utf-8">
+
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+  <script src="{{ url_for('static', filename='jquery.js') }}"></script>
+  <script src="{{ url_for('static', filename='dropzone.js') }}"></script>
+  <script>
+    Dropzone.autoDiscover = false;
+  </script>
+
+  <style>
+    html, body {
+      height: 100%;
+    }
+    #actions {
+      margin: 2em 0;
+    }
+
+
+    /* Mimic table appearance */
+    div.table {
+      display: table;
+    }
+    div.table .file-row {
+      display: table-row;
+    }
+    div.table .file-row > div {
+      display: table-cell;
+      vertical-align: top;
+      border-top: 1px solid #ddd;
+      padding: 8px;
+    }
+    div.table .file-row:nth-child(odd) {
+      background: #f9f9f9;
+    }
+
+
+
+    /* The total progress gets shown by event listeners */
+    #total-progress {
+      opacity: 0;
+      transition: opacity 0.3s linear;
+    }
+
+    /* Hide the progress bar when finished */
+    #previews .file-row.dz-success .progress {
+      opacity: 0;
+      transition: opacity 0.3s linear;
+    }
+
+    /* Hide the delete button initially */
+    #previews .file-row .delete {
+      display: none;
+    }
+
+    /* Hide the start and cancel buttons and show the delete button */
+
+    #previews .file-row.dz-success .start,
+    #previews .file-row.dz-success .cancel {
+      display: none;
+    }
+    #previews .file-row.dz-success .delete {
+      display: block;
+    }
+
+
+  </style>
+
+</head>
+<body>
+  
+  <div class="container" id="container">
+    <h2 class="lead">Configuration Demo</h2>
+    <div id="actions" class="row">
+
+      <div class="col-lg-7">
+        <!-- 控制总体的三个按钮 -->
+        <span class="btn btn-success fileinput-button">
+            <i class="glyphicon glyphicon-plus"></i>
+            <span>Add files...</span>
+        </span>
+        <button type="submit" class="btn btn-primary start">
+            <i class="glyphicon glyphicon-upload"></i>
+            <span>Start upload</span>
+        </button>
+        <button type="reset" class="btn btn-warning cancel">
+            <i class="glyphicon glyphicon-ban-circle"></i>
+            <span>Cancel upload</span>
+        </button>
+      </div>
+
+      <div class="col-lg-5">
+        <!-- 总体的进度 -->
+        <span class="fileupload-process">
+          <div id="total-progress" class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="progress-bar progress-bar-success" style="width:0%;" data-dz-uploadprogress></div>
+          </div>
+        </span>
+      </div>
+
+    </div>
+
+    <!--
+    data-dz-thumbnail：使用后代表该标签是存放缩略图的标签【这里必须是一个 <img /> 元素 ，并且alt 和 src 属性将被 Dropzone改变】
+    data-dz-name：存放文件名
+    data-dz-errormessage：存放错误信息
+    data-dz-size：存放文件大小
+    data-dz-remove ：删除队列中的文件，或者取消正在从队列上传到服务器的文件
+    data-dz-uploadprogress：上传进度【( 当这里有一个 uploadprogress事件时， Dropzone 将更改 style.width 属性从 0% 到 100% )】
+    -->
+    
+    <div class="table table-striped files" id="previews">
+
+      <div id="template" class="file-row">
+        <div>
+            <span class="preview"><img data-dz-thumbnail /></span>
+        </div>
+        <div>
+            <p class="name" data-dz-name ></p>
+            <strong class="error text-danger" data-dz-errormessage></strong>
+        </div>
+        <div>
+            <p class="size" data-dz-size></p>
+            <div class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div class="progress-bar progress-bar-success" style="width:0%;" data-dz-uploadprogress></div>
+            </div>
+        </div>
+        <div>
+          <button class="btn btn-primary start">
+              <i class="glyphicon glyphicon-upload"></i>
+              <span>Start</span>
+          </button>
+          <button data-dz-remove class="btn btn-warning cancel">
+              <i class="glyphicon glyphicon-ban-circle"></i>
+              <span>Cancel</span>
+          </button>
+          <button data-dz-remove class="btn btn-danger delete">
+            <i class="glyphicon glyphicon-trash"></i>
+            <span>Delete</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+<script>
+
+      // Get the template HTML and remove it from the doument
+      var previewNode = document.querySelector("#template");
+      previewNode.id = "";
+      var previewTemplate = previewNode.parentNode.innerHTML;
+      //开始先删除单个文件的布局
+      previewNode.parentNode.removeChild(previewNode);
+
+      var myDropzone = new Dropzone(document.body, { // 指定拖拽区为body
+        url: "{{ url_for('upload_file') }}", // Set the url
+        thumbnailWidth: 80,
+        thumbnailHeight: 80,
+        parallelUploads: 20,
+        previewTemplate: previewTemplate,
+        autoQueue: false, // 当队列有文件，是否立刻自动上传到服务器
+        previewsContainer: "#previews", // 指定存放文件队列区
+        clickable: ".fileinput-button" // 点击某个按钮或区域后出现选择电脑中本地图片，默认是previewsContainer指定的区域
+      });
+
+      myDropzone.on("addedfile", function(file) {
+        // 让模版中的单个文件可以点击上传
+        file.previewElement.querySelector(".start").onclick = function() { myDropzone.enqueueFile(file); };
+      });
+
+      // 显示所有文件整体上传进度1-100
+      myDropzone.on("totaluploadprogress", function(progress) {
+        document.querySelector("#total-progress .progress-bar").style.width = progress + "%";
+      });
+      
+      myDropzone.on("sending", function(file) {
+        // 显示整体的上传的进度条，说明：原来是0，所以上面的style.width = progress + "%"即使是100%也看不到
+        document.querySelector("#total-progress").style.opacity = "1";
+        // 失效上传按钮
+        file.previewElement.querySelector(".start").setAttribute("disabled", "disabled");
+      });
+
+      // 当没有文件上传时，隐藏进度条
+      myDropzone.on("queuecomplete", function(progress) {
+        document.querySelector("#total-progress").style.opacity = "0";
+      });
+
+      // 上传所有
+      document.querySelector("#actions .start").onclick = function() {
+         myDropzone.enqueueFiles(myDropzone.getAcceptedFiles());
+        //myDropzone.enqueueFiles(myDropzone.getFilesWithStatus(Dropzone.ADDED));与上面一样，可查看源码对比
+      };
+      //取消所有  
+      document.querySelector("#actions .cancel").onclick = function() {
+        myDropzone.removeAllFiles(true);
+      };
+
+</script>
+
+</body>
+</html>
